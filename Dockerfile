@@ -1,3 +1,3 @@
 FROM nginx
 COPY . /user/share/nginx/html
-EXPOSE 8080
+EXPOSE 80
