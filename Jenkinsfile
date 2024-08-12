@@ -1,9 +1,8 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_IMAGE_NAME = 'html-app-image'
-        DOCKER_REGISTRY = 'akshaykomath/akshay_ks:tagname'
         REMOTE_SERVER = '3.15.177.51'
         REMOTE_USER = 'ubuntu'
         REMOTE_DIRECTORY = '/tmp/'
@@ -12,11 +11,10 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Checkout the code from Git repository
                 checkout scm
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -25,7 +23,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Save Docker Image') {
             steps {
                 script {
@@ -34,7 +32,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Publish Docker Image') {
             steps {
                 script {
@@ -44,20 +42,20 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Transfer to Remote Server') {
             steps {
                 script {
                     // Transfer the Docker image to the remote server
                     sshPublisher(publishers: [
                         sshPublisherDesc(
-                            configName: 'web-server',
+                            configName: 'web-server', // Name of the SSH configuration
                             transfers: [
                                 sshTransfer(
                                     sourceFiles: "${DOCKER_IMAGE_NAME}.tar",
                                     remoteDirectory: "${REMOTE_DIRECTORY}",
                                     removePrefix: '',
-                                    execCommand: ''
+                                    execCommand: '' // Optionally add commands to execute after file transfer
                                 )
                             ],
                             usePromotionTimestamp: false,
@@ -68,22 +66,22 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy on Remote Server') {
             steps {
                 script {
                     // Execute commands on the remote server to load and run the Docker container
-                    sshCommand remote: [name: 'web-server'], command: '''
+                    sshCommand remote: [name: 'web-server'], command: """
                         docker load -i ${REMOTE_DIRECTORY}/${DOCKER_IMAGE_NAME}.tar
                         docker stop html-app-container || true
                         docker rm html-app-container || true
                         docker run -d -p 8080:80 --name html-app-container ${DOCKER_IMAGE_NAME}
-                    '''
+                    """
                 }
             }
         }
     }
-    
+
     post {
         success {
             echo 'Pipeline succeeded!'
